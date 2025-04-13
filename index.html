@@ -1,0 +1,978 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🍎 Яблочный кликер PRO</title>
+    <style>
+        :root {
+            --primary-color: #e74c3c;
+            --secondary-color: #2ecc71;
+            --accent-color: #3498db;
+            --dark-color: #2c3e50;
+            --light-color: #ecf0f1;
+            --highlight-color: #f1c40f;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', sans-serif;
+            text-align: center;
+            background: linear-gradient(135deg, #f9f3e9 0%, #e8f4f8 100%);
+            margin: 0;
+            padding: 20px;
+            color: var(--dark-color);
+            min-height: 100vh;
+        }
+        
+        #game-container {
+            max-width: 650px;
+            margin: 0 auto;
+            background-color: white;
+            padding: 30px;
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        #game-container::before {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 5px;
+            background: linear-gradient(90deg, var(--primary-color), var(--accent-color), var(--secondary-color));
+        }
+        
+        h1 {
+            color: var(--primary-color);
+            margin-bottom: 15px;
+            font-size: 2.5em;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+        
+        #score-container {
+            position: relative;
+            margin: 25px auto;
+        }
+        
+        #score {
+            font-size: 32px;
+            font-weight: bold;
+            color: var(--secondary-color);
+            background-color: rgba(46, 204, 113, 0.1);
+            padding: 15px 25px;
+            border-radius: 50px;
+            display: inline-block;
+            box-shadow: inset 0 0 10px rgba(0,0,0,0.05);
+            border: 2px solid rgba(46, 204, 113, 0.3);
+            transition: all 0.3s;
+        }
+        
+        #score:hover {
+            transform: scale(1.02);
+            box-shadow: 0 5px 15px rgba(46, 204, 113, 0.2);
+        }
+        
+        #apple-container {
+            position: relative;
+            margin: 30px auto;
+            width: 180px;
+            height: 180px;
+            transition: all 0.3s;
+        }
+        
+        #apple {
+            width: 100%;
+            height: 100%;
+            cursor: pointer;
+            transition: all 0.2s;
+            user-select: none;
+            filter: drop-shadow(0 6px 12px rgba(0,0,0,0.15));
+            transform-origin: center 70%;
+        }
+        
+        #apple:hover {
+            transform: scale(1.08) rotate(5deg);
+        }
+        
+        #apple:active {
+            transform: scale(0.95) rotate(-5deg);
+            filter: drop-shadow(0 3px 6px rgba(0,0,0,0.1));
+        }
+        
+        .click-effect {
+            position: absolute;
+            color: var(--highlight-color);
+            font-size: 28px;
+            font-weight: bold;
+            animation: float-up 1s forwards;
+            pointer-events: none;
+            z-index: 10;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+        }
+        
+        #upgrades {
+            margin-top: 30px;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 15px;
+        }
+        
+        .upgrade {
+            padding: 15px;
+            background: white;
+            color: var(--dark-color);
+            border: 1px solid #e0e0e0;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.3s;
+            text-align: left;
+            box-shadow: 0 3px 10px rgba(0,0,0,0.05);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .upgrade::before {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 4px;
+            height: 100%;
+            background-color: var(--accent-color);
+        }
+        
+        .upgrade:hover:not(:disabled) {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 20px rgba(0,0,0,0.1);
+            border-color: var(--accent-color);
+        }
+        
+        .upgrade:active:not(:disabled) {
+            transform: translateY(1px);
+        }
+        
+        .upgrade:disabled {
+            background: #f5f5f5;
+            cursor: not-allowed;
+            opacity: 0.7;
+        }
+        
+        .upgrade-info {
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .upgrade-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+        
+        .upgrade-title {
+            font-weight: bold;
+            font-size: 1.1em;
+            color: var(--dark-color);
+        }
+        
+        .upgrade-level {
+            font-size: 0.9em;
+            background-color: rgba(52, 152, 219, 0.1);
+            color: var(--accent-color);
+            padding: 3px 8px;
+            border-radius: 10px;
+        }
+        
+        .upgrade-desc {
+            font-size: 0.9em;
+            color: #666;
+            margin-bottom: 10px;
+        }
+        
+        .upgrade-price {
+            font-weight: bold;
+            color: var(--secondary-color);
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        
+        .upgrade-price::before {
+            content: "🍎";
+        }
+        
+        .progress-container {
+            width: 100%;
+            height: 6px;
+            background-color: #eee;
+            border-radius: 3px;
+            margin-top: 10px;
+            overflow: hidden;
+        }
+        
+        .progress-bar {
+            height: 100%;
+            background: linear-gradient(90deg, var(--accent-color), var(--secondary-color));
+            width: 0%;
+            transition: width 0.5s ease-out;
+        }
+        
+        #stats {
+            margin-top: 30px;
+            font-size: 16px;
+            background-color: rgba(236, 240, 241, 0.5);
+            padding: 20px;
+            border-radius: 15px;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+            text-align: left;
+        }
+        
+        .stat {
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .stat-label {
+            font-size: 0.9em;
+            color: #666;
+            margin-bottom: 3px;
+        }
+        
+        .stat-value {
+            font-weight: bold;
+            font-size: 1.2em;
+            color: var(--dark-color);
+        }
+        
+        #notifications {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            z-index: 100;
+        }
+        
+        .notification {
+            background-color: var(--dark-color);
+            color: white;
+            padding: 15px 25px;
+            border-radius: 8px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+            animation: slide-in 0.3s, fade-out 0.5s 2.5s forwards;
+            opacity: 0.95;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .notification::before {
+            content: "✨";
+        }
+        
+        .notification.error {
+            background-color: var(--primary-color);
+        }
+        
+        .notification.error::before {
+            content: "⚠️";
+        }
+        
+        .notification.success {
+            background-color: var(--secondary-color);
+        }
+        
+        .notification.success::before {
+            content: "✅";
+        }
+        
+        #save-buttons {
+            margin-top: 25px;
+            display: flex;
+            gap: 12px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+        
+        .save-btn {
+            padding: 10px 20px;
+            background-color: var(--dark-color);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-size: 0.9em;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .save-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 10px rgba(0,0,0,0.1);
+        }
+        
+        .save-btn:active {
+            transform: translateY(0);
+        }
+        
+        .save-btn.reset {
+            background-color: var(--primary-color);
+        }
+        
+        #achievements-container {
+            margin-top: 30px;
+            text-align: left;
+        }
+        
+        #achievements-title {
+            font-size: 1.2em;
+            font-weight: bold;
+            color: var(--dark-color);
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        #achievements-title::before {
+            content: "🏆";
+        }
+        
+        #achievements {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 12px;
+        }
+        
+        .achievement {
+            background-color: white;
+            padding: 12px;
+            border-radius: 8px;
+            box-shadow: 0 3px 8px rgba(0,0,0,0.05);
+            border-left: 4px solid var(--highlight-color);
+            opacity: 0.5;
+            transition: all 0.3s;
+        }
+        
+        .achievement.unlocked {
+            opacity: 1;
+            border-left-color: var(--secondary-color);
+            background-color: rgba(46, 204, 113, 0.05);
+        }
+        
+        .achievement-name {
+            font-weight: bold;
+            margin-bottom: 5px;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        
+        .achievement-name::before {
+            content: "🔒";
+        }
+        
+        .achievement.unlocked .achievement-name::before {
+            content: "🏅";
+        }
+        
+        .achievement-desc {
+            font-size: 0.8em;
+            color: #666;
+        }
+        
+        #particles-js {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            pointer-events: none;
+        }
+        
+        @keyframes slide-in {
+            from { transform: translateX(100%); }
+            to { transform: translateX(0); }
+        }
+        
+        @keyframes fade-out {
+            from { opacity: 0.95; }
+            to { opacity: 0; transform: translateY(-20px); }
+        }
+        
+        @keyframes float-up {
+            0% { transform: translateY(0); opacity: 1; }
+            100% { transform: translateY(-60px); opacity: 0; }
+        }
+        
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+        
+        @media (max-width: 600px) {
+            #game-container {
+                padding: 20px;
+            }
+            
+            #upgrades {
+                grid-template-columns: 1fr;
+            }
+            
+            #apple-container {
+                width: 150px;
+                height: 150px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div id="particles-js"></div>
+    <div id="notifications"></div>
+    
+    <div id="game-container">
+        <h1><span>Яблочный кликер PRO</span></h1>
+        
+        <div id="score-container">
+            <div id="score">Яблок: 0</div>
+        </div>
+        
+        <div id="apple-container">
+            <img id="apple" src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA1MTIgNTEyIj48cGF0aCBmaWxsPSIjZTQyOTJhIiBkPSJNMzUyIDI0MGMwLTIwLjkgMTAuOS00OS41IDI2LjUtNjQuOWwxLjgtMi4xQzM5OCAxNTEuMSA0MDggMTI1LjMgNDA4IDk2YzAtNTMuNC00My44LTk2LTk2LTk2cy05NiA0Mi42LTk2IDk2YzAgMjkuMyAxMCA1NS4xIDI3LjUgNzYuOWwxLjggMi4xQzI1MS4xIDE5MC41IDI2MCAyMTkuMSAyNjAgMjQwYzAgNjEuOC01MC4yIDExMi0xMTIgMTEySDQ4Yy04LjggMC0xNiA3LjItMTYgMTZzNy4yIDE2IDE2IDE2aDEwMGM4MS45IDAgMTU0LjUtNTEuMSAxODIuMS0xMjguOEMzNDkuOCAyNTkuNiAzNTIgMjQ5LjkgMzUyIDI0MHoiLz48L3N2Zz4=" alt="Яблоко">
+        </div>
+        
+        <div id="upgrades">
+            <button class="upgrade" id="auto-clicker" onclick="buyAutoClicker()">
+                <div class="upgrade-info">
+                    <div class="upgrade-header">
+                        <span class="upgrade-title">Автокликер</span>
+                        <span class="upgrade-level" id="auto-clicker-level">Ур. 0</span>
+                    </div>
+                    <span class="upgrade-desc">Автоматически собирает яблоки каждую секунду</span>
+                    <div class="progress-container">
+                        <div class="progress-bar" id="auto-clicker-progress"></div>
+                    </div>
+                </div>
+                <span class="upgrade-price" id="auto-clicker-price">10</span>
+            </button>
+            
+            <button class="upgrade" id="double-click" onclick="buyDoubleClick()">
+                <div class="upgrade-info">
+                    <div class="upgrade-header">
+                        <span class="upgrade-title">Усиленные клики</span>
+                        <span class="upgrade-level" id="double-click-level">Ур. 0</span>
+                    </div>
+                    <span class="upgrade-desc">Увеличивает количество яблок за клик</span>
+                    <div class="progress-container">
+                        <div class="progress-bar" id="double-click-progress"></div>
+                    </div>
+                </div>
+                <span class="upgrade-price" id="double-click-price">50</span>
+            </button>
+            
+            <button class="upgrade" id="mega-click" onclick="buyMegaClick()">
+                <div class="upgrade-info">
+                    <div class="upgrade-header">
+                        <span class="upgrade-title">Мега клик</span>
+                        <span class="upgrade-level" id="mega-click-level">Ур. 0</span>
+                    </div>
+                    <span class="upgrade-desc">Умножает эффективность всех кликов</span>
+                    <div class="progress-container">
+                        <div class="progress-bar" id="mega-click-progress"></div>
+                    </div>
+                </div>
+                <span class="upgrade-price" id="mega-click-price">100</span>
+            </button>
+            
+            <button class="upgrade" id="golden-apple" onclick="buyGoldenApple()">
+                <div class="upgrade-info">
+                    <div class="upgrade-header">
+                        <span class="upgrade-title">Золотое яблоко</span>
+                        <span class="upgrade-level" id="golden-apple-level">Ур. 0</span>
+                    </div>
+                    <span class="upgrade-desc">Шанс получить золотое яблоко при клике</span>
+                    <div class="progress-container">
+                        <div class="progress-bar" id="golden-apple-progress"></div>
+                    </div>
+                </div>
+                <span class="upgrade-price" id="golden-apple-price">250</span>
+            </button>
+        </div>
+        
+        <div id="stats">
+            <div class="stat">
+                <span class="stat-label">Скорость сбора</span>
+                <span class="stat-value" id="per-second">0/сек</span>
+            </div>
+            <div class="stat">
+                <span class="stat-label">Кликов сделано</span>
+                <span class="stat-value" id="click-count">0</span>
+            </div>
+            <div class="stat">
+                <span class="stat-label">Всего собрано</span>
+                <span class="stat-value" id="total-apples">0</span>
+            </div>
+            <div class="stat">
+                <span class="stat-label">Игровое время</span>
+                <span class="stat-value" id="play-time">0:00</span>
+            </div>
+        </div>
+        
+        <div id="achievements-container">
+            <div id="achievements-title">Достижения</div>
+            <div id="achievements">
+                <div class="achievement" id="achievement-100-clicks">
+                    <div class="achievement-name">100 кликов</div>
+                    <div class="achievement-desc">Сделайте 100 кликов по яблоку</div>
+                </div>
+                <div class="achievement" id="achievement-1000-apples">
+                    <div class="achievement-name">1000 яблок</div>
+                    <div class="achievement-desc">Соберите 1000 яблок</div>
+                </div>
+                <div class="achievement" id="achievement-first-upgrade">
+                    <div class="achievement-name">Первое улучшение</div>
+                    <div class="achievement-desc">Купите любое улучшение</div>
+                </div>
+            </div>
+        </div>
+        
+        <div id="save-buttons">
+            <button class="save-btn" onclick="saveGame()"><span>💾</span> Сохранить</button>
+            <button class="save-btn" onclick="loadGame()"><span>📂</span> Загрузить</button>
+            <button class="save-btn reset" onclick="resetGame()"><span>🔄</span> Сбросить</button>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/particles.js/2.0.0/particles.min.js"></script>
+    <script>
+        // Игровые переменные
+        let apples = 0;
+        let totalApples = 0;
+        let clickCount = 0;
+        let playTime = 0;
+        let autoClickers = 0;
+        let doubleClickLevel = 0;
+        let megaClickLevel = 0;
+        let goldenAppleLevel = 0;
+        let autoClickerCost = 10;
+        let doubleClickCost = 50;
+        let megaClickCost = 100;
+        let goldenAppleCost = 250;
+        
+        // Достижения
+        const achievements = {
+            '100-clicks': false,
+            '1000-apples': false,
+            'first-upgrade': false
+        };
+        
+        // Элементы DOM
+        const appleElement = document.getElementById('apple');
+        const appleContainer = document.getElementById('apple-container');
+        const scoreElement = document.getElementById('score');
+        const notificationsContainer = document.getElementById('notifications');
+        
+        // Инициализация игры
+        initGame();
+        
+        function initGame() {
+            // Инициализация частиц
+            particlesJS('particles-js', {
+                "particles": {
+                    "number": { "value": 30, "density": { "enable": true, "value_area": 800 } },
+                    "color": { "value": "#e74c3c" },
+                    "shape": { "type": "circle" },
+                    "opacity": { "value": 0.5, "random": true },
+                    "size": { "value": 3, "random": true },
+                    "line_linked": { "enable": false },
+                    "move": {
+                        "enable": true,
+                        "speed": 1,
+                        "direction": "bottom",
+                        "straight": false,
+                        "out_mode": "out"
+                    }
+                },
+                "interactivity": { "detect_on": "canvas", "events": { "onhover": { "enable": false } } }
+            });
+            
+            // Загрузка сохранения
+            loadGame();
+            
+            // Обновление интерфейса
+            updateScore();
+            updateButtons();
+            updateStats();
+            updateAchievements();
+            
+            // Автокликер
+            setInterval(autoClick, 1000);
+            
+            // Таймер игры
+            setInterval(() => {
+                playTime++;
+                updateStats();
+            }, 1000);
+        }
+        
+        // Обработчик клика по яблоку
+        appleElement.addEventListener('click', (e) => {
+            let clickValue = 1;
+            
+            // Добавляем бонусы от улучшений
+            if (doubleClickLevel > 0) {
+                clickValue += doubleClickLevel;
+            }
+            if (megaClickLevel > 0) {
+                clickValue *= (megaClickLevel + 1);
+            }
+            
+            // Проверка на золотое яблоко
+            if (goldenAppleLevel > 0 && Math.random() < goldenAppleLevel * 0.01) {
+                const goldenValue = clickValue * 10;
+                clickValue += goldenValue;
+                createClickEffect(e, `✨ ЗОЛОТОЕ +${goldenValue}`, true);
+            }
+            
+            apples += clickValue;
+            totalApples += clickValue;
+            clickCount++;
+            
+            // Создаем эффект клика
+            createClickEffect(e, `+${clickValue}`);
+            
+            // Проверка достижений
+            checkAchievements();
+            
+            updateScore();
+            updateStats();
+        });
+        
+        // Функция создания эффекта клика
+        function createClickEffect(event, text, isGolden = false) {
+            const effect = document.createElement('div');
+            effect.className = 'click-effect';
+            effect.textContent = text;
+            
+            if (isGolden) {
+                effect.style.color = '#f1c40f';
+                effect.style.fontSize = '24px';
+                effect.style.textShadow = '0 0 10px rgba(241, 196, 15, 0.8)';
+            }
+            
+            // Позиционируем эффект относительно места клика
+            const rect = appleContainer.getBoundingClientRect();
+            const x = event.clientX - rect.left;
+            const y = event.clientY - rect.top;
+            
+            effect.style.left = `${x}px`;
+            effect.style.top = `${y}px`;
+            
+            appleContainer.appendChild(effect);
+            
+            // Удаляем эффект после анимации
+            setTimeout(() => {
+                effect.remove();
+            }, 1000);
+        }
+        
+        // Функция автокликера
+        function autoClick() {
+            if (autoClickers > 0) {
+                apples += autoClickers;
+                totalApples += autoClickers;
+                updateScore();
+                updateStats();
+                
+                // Периодическое уведомление о работе автокликера
+                if (Math.random() < 0.1) {
+                    showNotification(`Автокликеры собрали ${autoClickers} яблок!`, 'success');
+                }
+            }
+        }
+        
+        // Функции покупки улучшений
+        function buyAutoClicker() {
+            if (apples >= autoClickerCost) {
+                apples -= autoClickerCost;
+                autoClickers++;
+                autoClickerCost = Math.floor(autoClickerCost * 1.5);
+                
+                showNotification(`Куплен автокликер! Теперь их: ${autoClickers}`, 'success');
+                updateScore();
+                updateButtons();
+                updateStats();
+                checkAchievements();
+            } else {
+                showNotification(`Недостаточно яблок! Нужно ещё ${autoClickerCost - apples}`, 'error');
+            }
+        }
+        
+        function buyDoubleClick() {
+            if (apples >= doubleClickCost) {
+                apples -= doubleClickCost;
+                doubleClickLevel++;
+                doubleClickCost = Math.floor(doubleClickCost * 2);
+                
+                showNotification(`Улучшены клики! Теперь +${doubleClickLevel + 1} за клик`, 'success');
+                updateScore();
+                updateButtons();
+                updateStats();
+                checkAchievements();
+            } else {
+                showNotification(`Недостаточно яблок! Нужно ещё ${doubleClickCost - apples}`, 'error');
+            }
+        }
+        
+        function buyMegaClick() {
+            if (apples >= megaClickCost) {
+                apples -= megaClickCost;
+                megaClickLevel++;
+                megaClickCost = Math.floor(megaClickCost * 2.5);
+                
+                showNotification(`Мега клик улучшен! Умножение ×${megaClickLevel + 1}`, 'success');
+                updateScore();
+                updateButtons();
+                updateStats();
+                checkAchievements();
+            } else {
+                showNotification(`Недостаточно яблок! Нужно ещё ${megaClickCost - apples}`, 'error');
+            }
+        }
+        
+        function buyGoldenApple() {
+            if (apples >= goldenAppleCost) {
+                apples -= goldenAppleCost;
+                goldenAppleLevel++;
+                goldenAppleCost = Math.floor(goldenAppleCost * 3);
+                
+                showNotification(`Шанс золотого яблока увеличен до ${goldenAppleLevel}%`, 'success');
+                updateScore();
+                updateButtons();
+                updateStats();
+                checkAchievements();
+            } else {
+                showNotification(`Недостаточно яблок! Нужно ещё ${goldenAppleCost - apples}`, 'error');
+            }
+        }
+        
+        // Обновление отображения счета
+        function updateScore() {
+            scoreElement.textContent = `Яблок: ${formatNumber(apples)}`;
+            
+            // Анимация при изменении счета
+            if (apples > 0) {
+                scoreElement.style.animation = 'pulse 0.3s';
+                setTimeout(() => {
+                    scoreElement.style.animation = '';
+                }, 300);
+            }
+        }
+        
+        // Обновление состояния кнопок улучшений
+        function updateButtons() {
+            document.getElementById('auto-clicker-price').textContent = formatNumber(autoClickerCost);
+            document.getElementById('double-click-price').textContent = formatNumber(doubleClickCost);
+            document.getElementById('mega-click-price').textContent = formatNumber(megaClickCost);
+            document.getElementById('golden-apple-price').textContent = formatNumber(goldenAppleCost);
+            
+            document.getElementById('auto-clicker-level').textContent = `Ур. ${autoClickers}`;
+            document.getElementById('double-click-level').textContent = `Ур. ${doubleClickLevel}`;
+            document.getElementById('mega-click-level').textContent = `Ур. ${megaClickLevel}`;
+            document.getElementById('golden-apple-level').textContent = `Ур. ${goldenAppleLevel}`;
+            
+            document.getElementById('auto-clicker').disabled = apples < autoClickerCost;
+            document.getElementById('double-click').disabled = apples < doubleClickCost;
+            document.getElementById('mega-click').disabled = apples < megaClickCost;
+            document.getElementById('golden-apple').disabled = apples < goldenAppleCost;
+            
+            // Обновление прогресс-баров
+            updateProgress('auto-clicker', autoClickerCost);
+            updateProgress('double-click', doubleClickCost);
+            updateProgress('mega-click', megaClickCost);
+            updateProgress('golden-apple', goldenAppleCost);
+        }
+        
+        // Обновление прогресс-баров
+        function updateProgress(type, cost) {
+            const progress = Math.min(100, (apples / cost) * 100);
+            document.getElementById(`${type}-progress`).style.width = `${progress}%`;
+        }
+        
+        // Обновление статистики
+        function updateStats() {
+            document.getElementById('per-second').textContent = `${formatNumber(autoClickers)}/сек`;
+            document.getElementById('click-count').textContent = formatNumber(clickCount);
+            document.getElementById('total-apples').textContent = formatNumber(totalApples);
+            
+            // Форматирование времени игры
+            const minutes = Math.floor(playTime / 60);
+            const seconds = playTime % 60;
+            document.getElementById('play-time').textContent = `${minutes}:${seconds.toString().padStart(2, '0')}`;
+        }
+        
+        // Проверка и обновление достижений
+        function checkAchievements() {
+            // 100 кликов
+            if (!achievements['100-clicks'] && clickCount >= 100) {
+                achievements['100-clicks'] = true;
+                document.getElementById('achievement-100-clicks').classList.add('unlocked');
+                showNotification('Достижение разблокировано: 100 кликов!', 'success');
+                apples += 50; // Награда
+                updateScore();
+            }
+            
+            // 1000 яблок
+            if (!achievements['1000-apples'] && totalApples >= 1000) {
+                achievements['1000-apples'] = true;
+                document.getElementById('achievement-1000-apples').classList.add('unlocked');
+                showNotification('Достижение разблокировано: 1000 яблок!', 'success');
+                apples += 200; // Награда
+                updateScore();
+            }
+            
+            // Первое улучшение
+            if (!achievements['first-upgrade'] && (autoClickers > 0 || doubleClickLevel > 0 || megaClickLevel > 0 || goldenAppleLevel > 0)) {
+                achievements['first-upgrade'] = true;
+                document.getElementById('achievement-first-upgrade').classList.add('unlocked');
+                showNotification('Достижение разблокировано: Первое улучшение!', 'success');
+                apples += 100; // Награда
+                updateScore();
+            }
+        }
+        
+        // Обновление отображения достижений
+        function updateAchievements() {
+            if (achievements['100-clicks']) {
+                document.getElementById('achievement-100-clicks').classList.add('unlocked');
+            }
+            if (achievements['1000-apples']) {
+                document.getElementById('achievement-1000-apples').classList.add('unlocked');
+            }
+            if (achievements['first-upgrade']) {
+                document.getElementById('achievement-first-upgrade').classList.add('unlocked');
+            }
+        }
+        
+        // Показ уведомлений
+        function showNotification(message, type = 'info') {
+            const notification = document.createElement('div');
+            notification.className = `notification ${type}`;
+            notification.textContent = message;
+            
+            notificationsContainer.appendChild(notification);
+            
+            // Удаляем уведомление после анимации
+            setTimeout(() => {
+                notification.remove();
+            }, 3000);
+        }
+        
+        // Форматирование чисел
+        function formatNumber(num) {
+            return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+        }
+        
+        // Сохранение игры
+        function saveGame() {
+            const gameData = {
+                apples,
+                totalApples,
+                clickCount,
+                playTime,
+                autoClickers,
+                doubleClickLevel,
+                megaClickLevel,
+                goldenAppleLevel,
+                autoClickerCost,
+                doubleClickCost,
+                megaClickCost,
+                goldenAppleCost,
+                achievements
+            };
+            
+            localStorage.setItem('appleClickerProSave', JSON.stringify(gameData));
+            showNotification('Игра сохранена!', 'success');
+        }
+        
+        // Загрузка игры
+        function loadGame() {
+            const savedData = localStorage.getItem('appleClickerProSave');
+            if (savedData) {
+                try {
+                    const gameData = JSON.parse(savedData);
+                    
+                    apples = gameData.apples || 0;
+                    totalApples = gameData.totalApples || 0;
+                    clickCount = gameData.clickCount || 0;
+                    playTime = gameData.playTime || 0;
+                    autoClickers = gameData.autoClickers || 0;
+                    doubleClickLevel = gameData.doubleClickLevel || 0;
+                    megaClickLevel = gameData.megaClickLevel || 0;
+                    goldenAppleLevel = gameData.goldenAppleLevel || 0;
+                    autoClickerCost = gameData.autoClickerCost || 10;
+                    doubleClickCost = gameData.doubleClickCost || 50;
+                    megaClickCost = gameData.megaClickCost || 100;
+                    goldenAppleCost = gameData.goldenAppleCost || 250;
+                    
+                    if (gameData.achievements) {
+                        for (const key in gameData.achievements) {
+                            achievements[key] = gameData.achievements[key];
+                        }
+                    }
+                    
+                    showNotification('Игра загружена!', 'success');
+                } catch (e) {
+                    showNotification('Ошибка загрузки сохранения', 'error');
+                    console.error(e);
+                }
+            }
+        }
+        
+        // Сброс игры
+        function resetGame() {
+            if (confirm('Вы уверены, что хотите сбросить игру? Весь прогресс будет потерян.')) {
+                apples = 0;
+                totalApples = 0;
+                clickCount = 0;
+                playTime = 0;
+                autoClickers = 0;
+                doubleClickLevel = 0;
+                megaClickLevel = 0;
+                goldenAppleLevel = 0;
+                autoClickerCost = 10;
+                doubleClickCost = 50;
+                megaClickCost = 100;
+                goldenAppleCost = 250;
+                
+                // Сброс достижений
+                for (const key in achievements) {
+                    achievements[key] = false;
+                }
+                
+                localStorage.removeItem('appleClickerProSave');
+                showNotification('Игра сброшена!', 'success');
+                
+                updateScore();
+                updateButtons();
+                updateStats();
+                updateAchievements();
+            }
+        }
+    </script>
+</body>
+</html>
